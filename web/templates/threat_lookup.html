@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Threat Intelligence Lookup | AI-NIDS SOC{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold mb-0 text-light"><i class="fa-solid fa-globe me-2 text-cyan"></i>IP Threat Intelligence Lookup</h2>
+    <p class="text-secondary mb-0">Query IP reputation, abuse reports, geolocation, and ISP data against Threat Intelligence databases.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-5">
+        <div class="card card-soc border-0 p-4 shadow-sm">
+            <h5 class="fw-bold text-light mb-3">Lookup Target IP</h5>
+            <div class="mb-3">
+                <label class="form-label text-secondary small">IPv4 / IPv6 Address</label>
+                <div class="input-group">
+                    <input type="text" id="targetIpInput" class="form-control bg-dark text-light border-secondary" placeholder="e.g. 185.220.101.5">
+                    <button class="btn btn-primary" onclick="lookupThreat()">
+                        <i class="fa-solid fa-search me-1"></i> Check
+                    </button>
+                </div>
+            </div>
+
+            <div class="quick-samples text-secondary small">
+                <span class="d-block mb-1">Quick Sample Tests:</span>
+                <button class="btn btn-sm btn-outline-secondary py-0 mb-1" onclick="setAndCheck('185.220.101.5')">Tor Exit Node (Malicious)</button>
+                <button class="btn btn-sm btn-outline-secondary py-0 mb-1" onclick="setAndCheck('8.8.8.8')">Google DNS (Clean)</button>
+                <button class="btn btn-sm btn-outline-secondary py-0 mb-1" onclick="setAndCheck('192.168.1.105')">LAN Private IP</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-7">
+        <div class="card card-soc border-0 p-4 shadow-sm" id="threatResultCard">
+            <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-shield-halved me-2 text-info"></i>Threat Intelligence Report</h5>
+            
+            <div id="threat-empty" class="text-center py-5 text-secondary">
+                <i class="fa-solid fa-magnifying-glass fa-3x mb-3 opacity-50"></i>
+                <p>Enter an IP address or click a sample to fetch real-time threat intelligence.</p>
+            </div>
+
+            <div id="threat-spinner" class="d-none text-center py-5">
+                <div class="spinner-border text-cyan mb-2" role="status"></div>
+                <div class="text-secondary">Consulting Threat Intelligence feeds...</div>
+            </div>
+
+            <div id="threat-content" class="d-none">
+                <div class="d-flex align-items-center justify-content-between p-3 rounded bg-dark border border-secondary mb-3">
+                    <div>
+                        <div class="text-secondary small">Target IP Address</div>
+                        <h4 id="disp-ip" class="fw-bold fw-mono text-cyan mb-0"></h4>
+                    </div>
+                    <div class="text-end">
+                        <div class="text-secondary small">Abuse Confidence Score</div>
+                        <h3 id="disp-score" class="fw-bold mb-0"></h3>
+                    </div>
+                </div>
+
+                <div class="list-group list-group-flush bg-transparent">
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span class="text-secondary">Threat Classification:</span>
+                        <strong id="disp-class"></strong>
+                    </div>
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span class="text-secondary">Total Malicious Reports:</span>
+                        <strong id="disp-reports"></strong>
+                    </div>
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span class="text-secondary">Country Origin:</span>
+                        <strong id="disp-country"></strong>
+                    </div>
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span class="text-secondary">Internet Service Provider (ISP):</span>
+                        <strong id="disp-isp"></strong>
+                    </div>
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span class="text-secondary">Cache Status:</span>
+                        <span id="disp-cached" class="badge bg-secondary"></span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function setAndCheck(ip) {
+    document.getElementById("targetIpInput").value = ip;
+    lookupThreat();
+}
+
+async function lookupThreat() {
+    const ip = document.getElementById("targetIpInput").value.trim();
+    if (!ip) return;
+
+    document.getElementById("threat-empty").classList.add("d-none");
+    document.getElementById("threat-content").classList.add("d-none");
+    document.getElementById("threat-spinner").classList.remove("d-none");
+
+    try {
+        const res = await fetch("/api/threat-check", {
+            method: "POST",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({ip_address: ip})
+        });
+        const data = await res.json();
+        document.getElementById("threat-spinner").classList.add("d-none");
+
+        if (res.ok) {
+            document.getElementById("disp-ip").innerText = data.ip_address;
+            const score = data.threat_score || 0;
+            const scoreEl = document.getElementById("disp-score");
+            scoreEl.innerText = `${score} / 100`;
+
+            const classEl = document.getElementById("disp-class");
+            if (score > 60) {
+                scoreEl.className = "fw-bold mb-0 text-danger";
+                classEl.innerHTML = '<span class="badge bg-danger">Malicious Attacker</span>';
+            } else if (score > 20) {
+                scoreEl.className = "fw-bold mb-0 text-warning";
+                classEl.innerHTML = '<span class="badge bg-warning text-dark">Suspicious Activity</span>';
+            } else {
+                scoreEl.className = "fw-bold mb-0 text-success";
+                classEl.innerHTML = '<span class="badge bg-success">Clean / Low Risk</span>';
+            }
+
+            document.getElementById("disp-reports").innerText = data.total_reports || 0;
+            document.getElementById("disp-country").innerText = data.country_code || "Unknown";
+            document.getElementById("disp-isp").innerText = data.isp || "Unknown";
+            document.getElementById("disp-cached").innerText = data.cached ? "Retrieved from Local Cache" : "Live Feed Query";
+            document.getElementById("threat-content").classList.remove("d-none");
+        } else {
+            alert(data.error || "Lookup failed");
+            document.getElementById("threat-empty").classList.remove("d-none");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Error contacting server");
+        document.getElementById("threat-spinner").classList.add("d-none");
+        document.getElementById("threat-empty").classList.remove("d-none");
+    }
+}
+
+// Auto check if URL has ?ip= parameter
+window.addEventListener("DOMContentLoaded", () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const ip = urlParams.get("ip");
+    if (ip) {
+        setAndCheck(ip);
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,53 @@
+{
+    "features": [
+        "duration",
+        "protocol_type",
+        "service",
+        "flag",
+        "src_bytes",
+        "dst_bytes",
+        "count",
+        "srv_count",
+        "same_srv_rate",
+        "diff_srv_rate",
+        "dst_host_count",
+        "dst_host_srv_count",
+        "dst_host_same_srv_rate",
+        "dst_host_diff_srv_rate",
+        "dst_host_same_src_port_rate"
+    ],
+    "categorical_encoders": {
+        "protocol_type": {
+            "icmp": 0,
+            "tcp": 1,
+            "udp": 2
+        },
+        "service": {
+            "dns": 0,
+            "echo": 1,
+            "finger": 2,
+            "ftp": 3,
+            "http": 4,
+            "https": 5,
+            "other": 6,
+            "private": 7,
+            "smtp": 8,
+            "telnet": 9
+        },
+        "flag": {
+            "REJ": 0,
+            "RSTO": 1,
+            "RSTR": 2,
+            "S0": 3,
+            "SF": 4,
+            "SH": 5
+        }
+    },
+    "classes": [
+        "DoS",
+        "Normal",
+        "PortScan",
+        "Probe"
+    ],
+    "accuracy": 1.0
+}

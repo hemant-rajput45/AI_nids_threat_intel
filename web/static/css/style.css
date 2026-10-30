@@ -1,0 +1,132 @@
+/* Cyber Security Operations Center (SOC) Theme */
+
+:root {
+    --soc-bg-dark: #0b0f19;
+    --soc-card-bg: #111827;
+    --soc-navbar-bg: #0d1322;
+    --soc-sidebar-bg: #0d1322;
+    --soc-border: #1f2937;
+    --soc-cyan: #06b6d4;
+    --soc-cyan-glow: rgba(6, 182, 212, 0.2);
+}
+
+body.bg-dark-soc {
+    background-color: var(--soc-bg-dark);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.bg-soc-navbar {
+    background-color: var(--soc-navbar-bg);
+}
+
+.bg-soc-sidebar {
+    background-color: var(--soc-sidebar-bg);
+    min-height: calc(100vh - 57px);
+}
+
+.card-soc {
+    background-color: var(--soc-card-bg);
+    border: 1px solid var(--soc-border) !important;
+    border-radius: 8px;
+}
+
+.text-cyan {
+    color: var(--soc-cyan) !important;
+}
+
+.btn-outline-cyan {
+    color: var(--soc-cyan);
+    border-color: var(--soc-cyan);
+}
+
+.btn-outline-cyan:hover {
+    background-color: var(--soc-cyan);
+    color: #0b0f19;
+}
+
+/* Typography & Mono Fonts for Network IPs */
+.fw-mono {
+    font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, Courier, monospace;
+}
+
+.fs-7 { font-size: 0.85rem; }
+.fs-8 { font-size: 0.75rem; }
+
+/* Sidebar Navigation */
+.sidebar .nav-link {
+    color: #9ca3af;
+    padding: 0.65rem 1rem;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.sidebar .nav-link:hover {
+    color: #fff;
+    background-color: rgba(255, 255, 255, 0.05);
+}
+
+.sidebar .nav-link.active {
+    color: #fff;
+    background-color: #1e293b;
+    border-left: 3px solid var(--soc-cyan);
+}
+
+/* Badges & Severity Tags */
+.badge-sev-critical {
+    background-color: #ef4444;
+    color: #fff;
+}
+
+.badge-sev-high {
+    background-color: #f97316;
+    color: #fff;
+}
+
+.badge-sev-medium {
+    background-color: #eab308;
+    color: #000;
+}
+
+.badge-sev-low {
+    background-color: #10b981;
+    color: #fff;
+}
+
+.soc-icon-badge {
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Live pulse dot for sniffer */
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background-color: currentColor;
+    display: inline-block;
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+/* Dropzone */
+.upload-dropzone {
+    border-style: dashed !important;
+    background-color: rgba(17, 24, 39, 0.6);
+    transition: all 0.2s ease;
+    cursor: pointer;
+}
+
+.upload-dropzone:hover {
+    border-color: var(--soc-cyan) !important;
+    background-color: rgba(6, 182, 212, 0.05);
+}

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Intrusion Alerts | AI-NIDS SOC{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0 text-light"><i class="fa-solid fa-triangle-exclamation me-2 text-danger"></i>Security Alerts Log</h2>
+        <p class="text-secondary mb-0">Detailed historical database of all flagged intrusion attempts.</p>
+    </div>
+    <div class="d-flex gap-2">
+        <input type="text" id="alertSearch" class="form-control form-control-sm bg-dark text-light border-secondary" placeholder="Filter by IP or Attack..." onkeyup="filterAlerts()">
+    </div>
+</div>
+
+<div class="card card-soc border-0 p-3 shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0" id="alertsTable">
+            <thead class="border-secondary text-secondary">
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Protocol</th>
+                    <th>Attack Type</th>
+                    <th>ML Confidence</th>
+                    <th>Threat Intel</th>
+                    <th>Severity</th>
+                    <th>Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% if alerts %}
+                    {% for a in alerts %}
+                    <tr>
+                        <td class="text-secondary small">{{ a.id }}</td>
+                        <td class="text-secondary small">{{ a.timestamp }}</td>
+                        <td class="fw-mono text-cyan">{{ a.source_ip }}</td>
+                        <td class="fw-mono">{{ a.dest_ip }}:{{ a.dest_port }}</td>
+                        <td><span class="badge bg-secondary">{{ a.protocol }}</span></td>
+                        <td><span class="badge bg-dark border border-secondary text-light">{{ a.attack_type }}</span></td>
+                        <td>{{ (a.confidence * 100)|round(1) }}%</td>
+                        <td>
+                            <span class="badge {% if a.threat_score > 60 %}bg-danger{% elif a.threat_score > 20 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                Score: {{ a.threat_score }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-sev-{{ a.severity|lower }}">{{ a.severity }}</span>
+                        </td>
+                        <td class="small text-secondary">{{ a.details }}</td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="10" class="text-center text-secondary py-5">
+                            No alerts logged yet.
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+function filterAlerts() {
+    const input = document.getElementById("alertSearch").value.toLowerCase();
+    const rows = document.querySelectorAll("#alertsTable tbody tr");
+    rows.forEach(row => {
+        const text = row.innerText.toLowerCase();
+        row.style.display = text.includes(input) ? "" : "none";
+    });
+}
+</script>
+{% endblock %}

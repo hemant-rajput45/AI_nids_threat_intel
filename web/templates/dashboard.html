@@ -1,0 +1,175 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard | AI-NIDS SOC{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="fw-bold mb-0 text-light"><i class="fa-solid fa-satellite-dish me-2 text-cyan"></i>Security Operations Center</h2>
+        <p class="text-secondary mb-0">Real-time network traffic anomaly detection and threat intelligence feed.</p>
+    </div>
+    <div class="text-end text-secondary small">
+        <i class="fa-regular fa-clock me-1"></i> Auto-refreshing every 3s
+    </div>
+</div>
+
+<!-- Stats Counter Cards -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card card-soc border-0 p-3 shadow-sm border-start border-4 border-primary">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary text-uppercase fs-7 fw-semibold">Total Intrusions</div>
+                    <h3 id="stat-total" class="fw-bold my-1 text-light">{{ stats.total_alerts }}</h3>
+                    <div class="fs-8 text-secondary">Flagged by ML Classifier</div>
+                </div>
+                <div class="soc-icon-badge bg-primary-subtle text-primary">
+                    <i class="fa-solid fa-triangle-exclamation fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-soc border-0 p-3 shadow-sm border-start border-4 border-danger">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary text-uppercase fs-7 fw-semibold">Critical Threats</div>
+                    <h3 id="stat-critical" class="fw-bold my-1 text-danger">{{ stats.critical }}</h3>
+                    <div class="fs-8 text-danger-emphasis">Immediate Action Needed</div>
+                </div>
+                <div class="soc-icon-badge bg-danger-subtle text-danger">
+                    <i class="fa-solid fa-skull-crossbones fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-soc border-0 p-3 shadow-sm border-start border-4 border-warning">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary text-uppercase fs-7 fw-semibold">High Severity</div>
+                    <h3 id="stat-high" class="fw-bold my-1 text-warning">{{ stats.high }}</h3>
+                    <div class="fs-8 text-secondary">Potential exploit activity</div>
+                </div>
+                <div class="soc-icon-badge bg-warning-subtle text-warning">
+                    <i class="fa-solid fa-radiation fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card card-soc border-0 p-3 shadow-sm border-start border-4 border-info">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="text-secondary text-uppercase fs-7 fw-semibold">Packets Inspected</div>
+                    <h3 id="stat-packets" class="fw-bold my-1 text-info">0</h3>
+                    <div class="fs-8 text-secondary">Live Scapy Stream</div>
+                </div>
+                <div class="soc-icon-badge bg-info-subtle text-info">
+                    <i class="fa-solid fa-network-wired fa-xl"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="row g-3 mb-4">
+    <div class="col-md-6">
+        <div class="card card-soc border-0 p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-light mb-0"><i class="fa-solid fa-chart-pie me-2 text-cyan"></i>Attack Type Classification</h6>
+                <span class="badge bg-secondary">Multi-Class AI</span>
+            </div>
+            <div style="height: 250px;" class="position-relative">
+                <canvas id="attackTypeChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-soc border-0 p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h6 class="fw-bold text-light mb-0"><i class="fa-solid fa-chart-column me-2 text-cyan"></i>Severity Breakdown</h6>
+                <span class="badge bg-secondary">Composite Risk</span>
+            </div>
+            <div style="height: 250px;" class="position-relative">
+                <canvas id="severityChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Live Alert Stream Table -->
+<div class="card card-soc border-0 p-3 shadow-sm mb-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h6 class="fw-bold text-light mb-0">
+            <i class="fa-solid fa-shield-virus me-2 text-danger"></i>Recent Intrusion Incidents
+        </h6>
+        <a href="/alerts" class="btn btn-sm btn-outline-secondary">View All Incidents <i class="fa-solid fa-arrow-right ms-1"></i></a>
+    </div>
+
+    <div class="table-responsive">
+        <table class="table table-dark table-hover align-middle mb-0 text-sm">
+            <thead class="border-secondary text-secondary">
+                <tr>
+                    <th>Time</th>
+                    <th>Source IP</th>
+                    <th>Destination IP</th>
+                    <th>Attack Type</th>
+                    <th>Confidence</th>
+                    <th>Threat Intel Score</th>
+                    <th>Severity</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="live-alerts-tbody">
+                {% if recent_alerts %}
+                    {% for alert in recent_alerts %}
+                    <tr>
+                        <td class="text-secondary small">{{ alert.timestamp }}</td>
+                        <td class="fw-mono text-cyan">{{ alert.source_ip }}</td>
+                        <td class="fw-mono">{{ alert.dest_ip }}:{{ alert.dest_port }}</td>
+                        <td>
+                            <span class="badge bg-dark border border-secondary text-light">{{ alert.attack_type }}</span>
+                        </td>
+                        <td>
+                            <div class="progress" style="height: 6px; width: 60px;">
+                                <div class="progress-bar bg-info" style="width: {{ (alert.confidence * 100)|int }}%"></div>
+                            </div>
+                            <span class="fs-8 text-secondary">{{ (alert.confidence * 100)|round(1) }}%</span>
+                        </td>
+                        <td>
+                            <span class="badge {% if alert.threat_score > 60 %}bg-danger{% elif alert.threat_score > 20 %}bg-warning text-dark{% else %}bg-success{% endif %}">
+                                {{ alert.threat_score }}/100
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge badge-sev-{{ alert.severity|lower }}">{{ alert.severity }}</span>
+                        </td>
+                        <td>
+                            <a href="/threat-lookup?ip={{ alert.source_ip }}" class="btn btn-outline-cyan btn-xs">
+                                <i class="fa-solid fa-magnifying-glass"></i> Inspect
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                {% else %}
+                    <tr>
+                        <td colspan="8" class="text-center text-secondary py-4">
+                            No security incidents detected yet. Start the sniffer or upload a PCAP to trigger detections!
+                        </td>
+                    </tr>
+                {% endif %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+{% endblock %}

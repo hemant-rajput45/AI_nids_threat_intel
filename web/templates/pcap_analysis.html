@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+
+{% block title %}PCAP Forensics | AI-NIDS SOC{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <h2 class="fw-bold mb-0 text-light"><i class="fa-solid fa-file-waveform me-2 text-cyan"></i>PCAP Offline Forensic Analysis</h2>
+    <p class="text-secondary mb-0">Upload network packet capture (.pcap or .pcapng) files for automated AI intrusion inspection.</p>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-6">
+        <div class="card card-soc border-0 p-4 shadow-sm text-center">
+            <div class="upload-dropzone p-5 rounded border border-2 border-dashed border-secondary mb-3" id="dropzone">
+                <i class="fa-solid fa-cloud-arrow-up fa-3x text-cyan mb-3"></i>
+                <h5 class="fw-bold text-light">Select or Drag & Drop PCAP File</h5>
+                <p class="text-secondary small mb-3">Supports standard Wireshark/TCPDump .pcap and .pcapng captures</p>
+                <input type="file" id="pcapFileInput" accept=".pcap,.pcapng" class="d-none" onchange="handleFileSelect(this)">
+                <button class="btn btn-outline-cyan" onclick="document.getElementById('pcapFileInput').click()">
+                    <i class="fa-solid fa-folder-open me-2"></i>Browse File
+                </button>
+            </div>
+            <div id="file-chosen-name" class="text-secondary small mb-3"></div>
+
+            <button id="btn-upload" class="btn btn-primary w-100 fw-bold" disabled onclick="uploadAndAnalyze()">
+                <i class="fa-solid fa-magnifying-glass me-2"></i>Run AI Security Audit
+            </button>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card card-soc border-0 p-4 shadow-sm h-100">
+            <h5 class="fw-bold text-light mb-3"><i class="fa-solid fa-clipboard-check me-2 text-success"></i>Audit Report & Findings</h5>
+            
+            <div id="analysis-placeholder" class="text-secondary text-center py-5">
+                <i class="fa-solid fa-chart-line fa-3x mb-3 text-secondary opacity-50"></i>
+                <p>Upload a PCAP capture on the left to begin intrusion detection audit.</p>
+            </div>
+
+            <div id="analysis-spinner" class="d-none text-center py-5">
+                <div class="spinner-border text-cyan mb-3" role="status"></div>
+                <h6 class="text-light">Analyzing Packets via Scapy & ML Classifier...</h6>
+                <p class="text-secondary small">Extracting flow vectors and querying threat intelligence</p>
+            </div>
+
+            <div id="analysis-results" class="d-none">
+                <div class="alert alert-success d-flex align-items-center gap-2 mb-3">
+                    <i class="fa-solid fa-circle-check fa-lg"></i>
+                    <div><strong>Analysis Completed Successfully!</strong></div>
+                </div>
+
+                <div class="list-group list-group-flush mb-4 bg-transparent">
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span>Analyzed File:</span>
+                        <strong id="res-filename" class="text-cyan"></strong>
+                    </div>
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span>Total Packets Read:</span>
+                        <strong id="res-total"></strong>
+                    </div>
+                    <div class="list-group-item bg-transparent text-light border-secondary d-flex justify-content-between">
+                        <span>Intrusions Flagged:</span>
+                        <strong id="res-intrusions" class="text-danger"></strong>
+                    </div>
+                </div>
+
+                <a href="/alerts" class="btn btn-outline-cyan w-100">
+                    <i class="fa-solid fa-list me-1"></i> View Flagged Alerts in Log
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let selectedFile = null;
+
+function handleFileSelect(input) {
+    if (input.files && input.files[0]) {
+        selectedFile = input.files[0];
+        document.getElementById("file-chosen-name").innerText = `Selected: ${selectedFile.name} (${(selectedFile.size/1024).toFixed(1)} KB)`;
+        document.getElementById("btn-upload").disabled = false;
+    }
+}
+
+async function uploadAndAnalyze() {
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append("pcap_file", selectedFile);
+
+    document.getElementById("analysis-placeholder").classList.add("d-none");
+    document.getElementById("analysis-results").classList.add("d-none");
+    document.getElementById("analysis-spinner").classList.remove("d-none");
+    document.getElementById("btn-upload").disabled = true;
+
+    try {
+        const response = await fetch("/api/upload-pcap", {
+            method: "POST",
+            body: formData
+        });
+        const data = await response.json();
+
+        document.getElementById("analysis-spinner").classList.add("d-none");
+        if (data.status === "success") {
+            document.getElementById("res-filename").innerText = data.file_name;
+            document.getElementById("res-total").innerText = data.total_packets;
+            document.getElementById("res-intrusions").innerText = data.intrusions_detected;
+            document.getElementById("analysis-results").classList.remove("d-none");
+        } else {
+            alert("Error: " + (data.message || "Failed to process PCAP"));
+            document.getElementById("analysis-placeholder").classList.remove("d-none");
+        }
+    } catch (err) {
+        console.error(err);
+        alert("Upload error occurred.");
+        document.getElementById("analysis-spinner").classList.add("d-none");
+        document.getElementById("analysis-placeholder").classList.remove("d-none");
+    } finally {
+        document.getElementById("btn-upload").disabled = false;
+    }
+}
+</script>
+{% endblock %}
